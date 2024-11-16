@@ -20,9 +20,22 @@
 		49C7D56C2CE2D07700EF4C0B /* mlx-swift-mnist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "mlx-swift-mnist.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		491189E12CE94AFE00FB7A94 /* Exceptions for "mlx-swift-mnist" folder in "mlx-swift-mnist" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"training-results2.png",
+			);
+			target = 49C7D56B2CE2D07700EF4C0B /* mlx-swift-mnist */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		49C7D56E2CE2D07700EF4C0B /* mlx-swift-mnist */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				491189E12CE94AFE00FB7A94 /* Exceptions for "mlx-swift-mnist" folder in "mlx-swift-mnist" target */,
+			);
 			path = "mlx-swift-mnist";
 			sourceTree = "<group>";
 		};
