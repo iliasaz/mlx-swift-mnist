@@ -10,6 +10,6 @@ The application runs best on MacOS 15+ and Apple Silicon CPU/GPU.
 
 The moduler design allows us to modify the models independently from data processing and training pipelines. One can create their own neural network model and easily plug it into the app.
 
-![Screenshots](https://github.com/iliasaz/mlx-swift-mnist/blob/main/training-results2.png
+![Screenshots](https://github.com/iliasaz/mlx-swift-mnist/blob/main/training-results2.png)
 
 
