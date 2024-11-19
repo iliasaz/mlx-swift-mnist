@@ -20,9 +20,22 @@
 		49C7D56C2CE2D07700EF4C0B /* mlx-swift-mnist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "mlx-swift-mnist.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		49118A342CEAD15C00FB7A94 /* Exceptions for "mlx-swift-mnist" folder in "mlx-swift-mnist" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 49C7D56B2CE2D07700EF4C0B /* mlx-swift-mnist */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		49C7D56E2CE2D07700EF4C0B /* mlx-swift-mnist */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				49118A342CEAD15C00FB7A94 /* Exceptions for "mlx-swift-mnist" folder in "mlx-swift-mnist" target */,
+			);
 			path = "mlx-swift-mnist";
 			sourceTree = "<group>";
 		};
@@ -284,6 +297,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "mlx-swift-mnist/Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -311,6 +325,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "mlx-swift-mnist/Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

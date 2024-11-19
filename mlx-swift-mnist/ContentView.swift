@@ -10,11 +10,12 @@ import TabularData
 import UniformTypeIdentifiers
 import MLX
 import MLXOptimizers
+import UniformTypeIdentifiers
 
 
 struct ContentView: View {
     @Bindable var viewModel = ViewModel()
-    @State private var fileLoadIsPresented: Bool = false
+    @State private var isDataFileLoaPresented: Bool = false
 
     private let datasetURL = URL(string: "https://www.kaggle.com/competitions/digit-recognizer")!
 
@@ -41,9 +42,9 @@ struct ContentView: View {
 
                         HStack {
                             Button("Load Data") {
-                                fileLoadIsPresented.toggle()
+                                isDataFileLoaPresented.toggle()
                             }
-                            .fileImporter(isPresented: $fileLoadIsPresented, allowedContentTypes: [.commaSeparatedText]) { result in
+                            .fileImporter(isPresented: $isDataFileLoaPresented, allowedContentTypes: [.commaSeparatedText]) { result in
                                 switch result {
                                     case .success(let url):
                                         Task {
@@ -80,15 +81,35 @@ struct ContentView: View {
                             .textFieldStyle(.roundedBorder)
 
                         HStack {
-                            Button("Train Model") {
+                            Button("Train") {
                                 Task {
                                     await viewModel.train()
                                 }
                             }
-                            .disabled(viewModel.isLoadingData || viewModel.isTraining)
+                            .disabled(viewModel.isLoadingData || viewModel.isLoading || viewModel.isSaving || viewModel.isTraining)
+
+                            Button("Reset Model") {
+                                Task {
+                                    await viewModel.resetModel()
+                                }
+                            }
+                            .disabled(viewModel.isLoading || viewModel.isSaving || viewModel.isTraining)
 
                             ProgressView()
-                                .opacity(viewModel.isTraining ? 1 : 0)
+                                .opacity((viewModel.isTraining || viewModel.isLoading || viewModel.isSaving) ? 1 : 0)
+
+                            Button("Save") {
+                                showSavePanel()
+                            }
+                            .disabled(viewModel.isLoading || viewModel.isSaving || viewModel.isTraining)
+
+                            Button("Load") {
+                                showOpenPanel()
+                            }
+                            .disabled(viewModel.isLoading || viewModel.isSaving || viewModel.isTraining)
+
+                            NavigationLink("Test", destination: PredictionView(viewModel: viewModel))
+                                .disabled(viewModel.isLoading || viewModel.isTraining)
                         }
                     }
                 }
@@ -99,6 +120,36 @@ struct ContentView: View {
             .padding()
         }
         .navigationTitle("MLX Swift MNIST Training Example")
+    }
+
+    func showSavePanel() {
+        let savePanel = NSSavePanel()
+        savePanel.title = "Save Model"
+        savePanel.allowedContentTypes = [.safetensors] // Specify your file type
+        savePanel.nameFieldStringValue = "model" // Default file name
+
+        savePanel.begin { response in
+            if response == .OK, let url = savePanel.url {
+                Task {
+                    await viewModel.save(to: url)
+                }
+            }
+        }
+    }
+
+    func showOpenPanel() {
+        let openPanel = NSOpenPanel()
+        openPanel.title = "Select a Model File"
+        openPanel.allowedContentTypes = [.safetensors] // Specify your file type
+        openPanel.allowsMultipleSelection = false // Allow one file
+
+        openPanel.begin { response in
+            if response == .OK, let url = openPanel.url {
+                Task {
+                    await viewModel.load(from: url)
+                }
+            }
+        }
     }
 }
 
@@ -135,6 +186,7 @@ extension AnyColumn: @retroactive @unchecked Sendable {}
         }
     }
 
+    // we want to save the most recent dataset size
     @ObservationIgnored @AppStorage("defaultRowLimit") private var _storedRowLimit: Int = 1000
     @ObservationIgnored var storedRowLimit: Int {
         get {
@@ -156,13 +208,15 @@ extension AnyColumn: @retroactive @unchecked Sendable {}
 
     var isLoadingData = false
     var isTraining = false
+    var isSaving = false
+    var isLoading = false
     var batchSize: Int = 256
     var epochs: Int = 10
     var learningRate: Float = 0.1
     var selectedModel: ModelType = .leNet  // Default model selection
 
-    var trainingProgress: [(epoch: Int, trainingLoss: Float, testLoss: Float, accuracy: Float)] = []
-    private var trainer = Trainer()
+    private(set) var trainingProgress: [TrainingProgressItem] = []
+    var trainer = Trainer()
 
     func loadTrainData(fromURL url: URL) async {
         defer { isLoadingData = false }
@@ -196,27 +250,77 @@ extension AnyColumn: @retroactive @unchecked Sendable {}
 
     func train() async {
         isTraining = true
-        trainingProgress = []
 
-        let model: TrainableModel = selectedModel == .leNet ? LeNet() : MLP()
-        await trainer.setModel(model)
+        // continue training a model if one is already loaded
+        if await trainer.model == nil {
+            let model: TrainableModel = selectedModel == .leNet ? LeNet() : MLP()
+            await trainer.setModel(model)
+            trainingProgress = []
+        }
         await trainer.setOptimizer(SGD(learningRate: learningRate))
         await trainer.train(viewModel: self, epochs: epochs, batchSize: batchSize)
         isTraining = false
     }
 
+    func resetModel() async {
+        let model: TrainableModel = selectedModel == .leNet ? LeNet() : MLP()
+        await trainer.setModel(model)
+        trainingProgress = []
+    }
+
+    func save(to url: URL) async {
+        do {
+            print("begin saving the model")
+            try await trainer.saveModel(to: url)
+            print("model saved successfully")
+        } catch {
+            print("Error saving the model: \(error)")
+        }
+    }
+
+    func load(from url: URL) async {
+        do {
+            let model: TrainableModel = selectedModel == .leNet ? LeNet() : MLP()
+            await trainer.setModel(model)
+            try await trainer.loadModel(from: url)
+            trainingProgress = []
+        } catch {
+            print("Error loading the model: \(error)")
+        }
+    }
+
+    func addTrainingProgress(_ progress: TrainingProgressItem) {
+        let remappedProgress = TrainingProgressItem(epoch: trainingProgress.count + 1,
+                                                    trainingLoss: progress.trainingLoss,
+                                                    testLoss: progress.testLoss,
+                                                    accuracy: progress.accuracy)
+        trainingProgress.append(remappedProgress)
+    }
+
     static var preview: ViewModel {
         let vm = ViewModel()
         vm.trainingProgress = [
-            (epoch: 1, trainingLoss: 0.9, testLoss: 0.8, accuracy: 0.1),
-            (epoch: 2, trainingLoss: 0.7, testLoss: 0.6, accuracy: 0.2),
-            (epoch: 3, trainingLoss: 0.5, testLoss: 0.8, accuracy: 0.4),
-            (epoch: 4, trainingLoss: 0.3, testLoss: 0.5, accuracy: 0.6),
-            (epoch: 5, trainingLoss: 0.2, testLoss: 0.4, accuracy: 0.75),
-            (epoch: 6, trainingLoss: 0.1, testLoss: 0.4, accuracy: 0.85)
+            TrainingProgressItem(epoch: 1, trainingLoss: 0.9, testLoss: 0.85, accuracy: 0.1),
+            TrainingProgressItem(epoch: 2, trainingLoss: 0.8, testLoss: 0.7, accuracy: 0.2),
+            TrainingProgressItem(epoch: 3, trainingLoss: 0.7, testLoss: 0.6, accuracy: 0.3),
+            TrainingProgressItem(epoch: 4, trainingLoss: 0.5, testLoss: 0.55, accuracy: 0.4),
+            TrainingProgressItem(epoch: 5, trainingLoss: 0.3, testLoss: 0.4, accuracy: 0.45),
+            TrainingProgressItem(epoch: 6, trainingLoss: 0.2, testLoss: 0.3, accuracy: 0.6),
+            TrainingProgressItem(epoch: 7, trainingLoss: 0.1, testLoss: 0.25, accuracy: 0.85),
         ]
         return vm
     }
+}
+
+struct TrainingProgressItem {
+    let epoch: Int
+    let trainingLoss: Float
+    let testLoss: Float
+    let accuracy: Float
+}
+
+extension UTType {
+    static var safetensors: UTType { .init("com.iliasazonov.safetensors")! }
 }
 
 

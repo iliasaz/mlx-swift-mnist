@@ -100,18 +100,37 @@ actor Trainer {
             }
             let end = Date.timeIntervalSinceReferenceDate
 
-            // train loss
-            let lossSum = trainingLosses.reduce(0, +)
+            // mean training loss over the current epoch
             let epochTrainingLoss = trainingLosses.reduce(0, +) / Float(trainingLosses.count)
 
             // test accuracy and loss
             let testAccuracy: Float = model.eval(x: testImages, y: testLabels).item(Float.self)
             let testLoss: Float = model.loss(model: model, x: testImages, y: testLabels).item(Float.self)
-            print("epoch: \(epoch), time: \(end - start), loss sum: \(lossSum), training loss: \(epochTrainingLoss), test accuracy: \(testAccuracy), test loss: \(testLoss)")
+            print("epoch: \(epoch), time: \(end - start), training loss: \(epochTrainingLoss), test accuracy: \(testAccuracy), test loss: \(testLoss)")
 
             await MainActor.run {
-                viewModel.trainingProgress.append((epoch: epoch, trainingLoss: epochTrainingLoss, testLoss: testLoss, accuracy: testAccuracy))
+                viewModel.addTrainingProgress(TrainingProgressItem(epoch: epoch, trainingLoss: epochTrainingLoss, testLoss: testLoss, accuracy: testAccuracy))
             }
         }
+    }
+
+    func saveModel(to url: URL) async throws {
+        guard let model else { return }
+        try MLX.save(arrays: Dictionary(uniqueKeysWithValues: model.trainableParameters().flattened()), url: url)
+    }
+
+    func loadModel(from url: URL) async throws {
+        guard let model else { return }
+        let weights = try ModuleParameters.unflattened(loadArrays(url: url))
+        try model.update(parameters: weights, verify: .all)
+        eval(model)
+    }
+
+    func predictDistribution(pixelData: MLXArray) -> (probabilities: [Float], highestIndex: Int)? {
+        guard let model else { return nil }
+        let x = pixelData.reshaped([1, 28, 28, 1]).asType(.float32) / 255.0
+        let y = model(x).flattened()
+        let highestIndex = argMax(y).item(Int.self)
+        return (probabilities: y.map {$0.item(Float.self)}, highestIndex: highestIndex)
     }
 }

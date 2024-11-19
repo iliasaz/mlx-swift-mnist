@@ -19,6 +19,7 @@ class LeNet: Module, TrainableModel {
     @ModuleInfo var fc1: Linear
     @ModuleInfo var fc2: Linear
     @ModuleInfo var fc3: Linear
+    @ModuleInfo var sm: Softmax
 
     override init() {
         conv1 = Conv2d(inputChannels: 1, outputChannels: 6, kernelSize: 5, padding: 2)
@@ -28,6 +29,7 @@ class LeNet: Module, TrainableModel {
         fc1 = Linear(16 * 5 * 5, 120)
         fc2 = Linear(120, 84)
         fc3 = Linear(84, 10)
+        sm = Softmax(axis: 1)
     }
 
     func callAsFunction(_ x: MLXArray) -> MLXArray {
@@ -38,6 +40,7 @@ class LeNet: Module, TrainableModel {
         x = tanh(fc1(x))
         x = tanh(fc2(x))
         x = fc3(x)
+        x = sm(x)
         return x
     }
 
