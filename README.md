@@ -8,7 +8,12 @@ This is an example application demonstrating the use of [Apple MLX (Swift)](http
 
 The application runs best on MacOS 15+ and Apple Silicon CPU/GPU.
 
-The moduler design allows us to modify the models independently from data processing and training pipelines. One can create their own neural network model and easily plug it into the app.
+The moduler design allows us to modify the models independently from data processing and training pipelines. One can create their own neural network model and easily plug it into the app.  
+
+## New in v.1.1
+- Saving and loading a trained model using safetensors format  
+- Digit recognition from a hand drawn image  
+- Continuous model training with reporting of the current losses and accuracy  
 
 ![Screenshots](https://github.com/iliasaz/mlx-swift-mnist/blob/main/training-results2.png)
 
