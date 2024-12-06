@@ -26,6 +26,5 @@ The moduler design allows us to modify the models independently from data proces
 
 ![Screenshots](https://github.com/iliasaz/mlx-swift-mnist/blob/main/training-results2.png)
 ![Screenshots](https://github.com/iliasaz/mlx-swift-mnist/blob/main/layer-viz1.png)
-![Screenshots](https://github.com/iliasaz/mlx-swift-mnist/blob/main/layer-viz2.png)
 
 
