@@ -50,16 +50,42 @@ extension Path {
 }
 
 struct PredictionView: View {
-    @Bindable var viewModel = ViewModel()
+    @Bindable var viewModel: ViewModel
     @State var path: Path = Path()
     @State var predictions = [Prediction]()
-    let canvasSize = 400.0
+    let canvasSize = 300.0
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 5) {
             Text("Recognizing a Hand-written Digit")
                 .font(.title.bold())
                 .padding(.vertical)
+
+            Form {
+                Section("Model") {
+                    Text("You can use currently loadedd model or load a new one from a file")
+                        .font(.subheadline.italic())
+                    HStack {
+                        // Model selection picker
+                        Picker("", selection: $viewModel.selectedModel) {
+                            ForEach(ViewModel.ModelType.allCases) { model in
+                                Text(model.rawValue).tag(model)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        Button("Load from File") {
+                            showOpenPanel()
+                        }
+                        .help("Load a model from file")
+                        .disabled(viewModel.isLoading || viewModel.isSaving || viewModel.isTraining)
+                    }
+                    .frame(maxWidth: canvasSize)
+                }
+            }
+            .frame(maxWidth: canvasSize*2.0 + 10.0, maxHeight: 100, alignment: .leading)
+            .padding(.horizontal, -8)
+//            .border(.red)
 
             HStack {
                 VStack(alignment: .leading) {
@@ -74,19 +100,42 @@ struct PredictionView: View {
                         .cornerRadius(5)
                 }
             }
+
             HStack {
                 Button("Predict") {
                     path.center(to: CGPoint(x: canvasSize / 2, y: canvasSize / 2))
                     predict()
                 }
+
                 Button("Clear") {
-                    path = Path()
-                    predictions = []
+                    clear()
                 }
             }
+
+            Text("Activations")
+                .font(.title2)
+                .padding(.vertical)
+
+            viewModel.vizModel.view
+
             Spacer()
         }
         .padding()
+    }
+
+    func showOpenPanel() {
+        let openPanel = NSOpenPanel()
+        openPanel.title = "Select a Model File"
+        openPanel.allowedContentTypes = [.safetensors] // Specify your file type
+        openPanel.allowsMultipleSelection = false // Allow one file
+
+        openPanel.begin { response in
+            if response == .OK, let url = openPanel.url {
+                Task {
+                    await viewModel.load(from: url)
+                }
+            }
+        }
     }
 
     @MainActor
@@ -96,12 +145,19 @@ struct PredictionView: View {
             content: Canvas(path: $path).frame(width: canvasSize, height: canvasSize))
         if let image = imageRenderer.cgImage?.grayscaleImage(with: mnistImageSize) {
             Task {
-                guard let results = await viewModel.trainer.predictDistribution(pixelData: image.pixelData()) else { return }
+                guard let results = viewModel.vizModel.predictionDistribution(for: image.pixelData().reshaped([1, 28, 28, 1]).asType(Float.self)/255.0, withActivations: true) else { return }
                 predictions = results.probabilities.enumerated().map {
                     Prediction(value: $0.offset, probability: $0.element, isBest: $0.offset == results.highestIndex)
                 }
             }
         }
+    }
+
+    @MainActor
+    func clear() {
+        path = Path()
+        predictions = []
+        viewModel.vizModel.clearActivations()
     }
 }
 
@@ -138,6 +194,7 @@ extension CGImage {
 
 
 #Preview {
-    PredictionView()
+    @Previewable @State var viewModel = ViewModel()
+    PredictionView(viewModel: viewModel)
         .frame(width: 1000, height: 800)
 }

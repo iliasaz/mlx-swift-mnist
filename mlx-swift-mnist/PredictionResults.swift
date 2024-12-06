@@ -35,10 +35,10 @@ struct PredictionResults: View {
 
 struct Prediction: Hashable {
     let value: Int
-    let probability: Float
+    let probability: Double
     let isBest: Bool
 
-    init(value: Int, probability: Float, isBest: Bool = false) {
+    init(value: Int, probability: Double, isBest: Bool = false) {
         self.value = value
         self.probability = probability
         self.isBest = isBest

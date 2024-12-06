@@ -13,7 +13,7 @@ import MLXRandom
 import MLXNN
 
 actor Trainer {
-    let mnistImageSize: CGSize = CGSize(width: 28, height: 28)
+//    let mnistImageSize: CGSize = CGSize(width: 28, height: 28)
 
     var model: (any TrainableModel)?
     var optimizer: Optimizer?
@@ -27,7 +27,6 @@ actor Trainer {
         let (trainSlice, testSlice) = data.randomSplit(by: 0.8)
         let imageColumnNames = data.columns.map(\.name).dropFirst()
         print("trainSlice shape: \(trainSlice.shape), testSlice shape: \(testSlice.shape)")
-
 
         // extract label and image columns
         let trainLabels = trainSlice["label"]
@@ -124,13 +123,5 @@ actor Trainer {
         let weights = try ModuleParameters.unflattened(loadArrays(url: url))
         try model.update(parameters: weights, verify: .all)
         eval(model)
-    }
-
-    func predictDistribution(pixelData: MLXArray) -> (probabilities: [Float], highestIndex: Int)? {
-        guard let model else { return nil }
-        let x = pixelData.reshaped([1, 28, 28, 1]).asType(.float32) / 255.0
-        let y = model(x).flattened()
-        let highestIndex = argMax(y).item(Int.self)
-        return (probabilities: y.map {$0.item(Float.self)}, highestIndex: highestIndex)
     }
 }

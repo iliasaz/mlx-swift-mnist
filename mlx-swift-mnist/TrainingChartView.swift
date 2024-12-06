@@ -80,7 +80,6 @@ struct TrainingChartView: View {
                         position: .top,
                         alignment: .center,
                         spacing: 0,
-//                            overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))
                         overflowResolution: .init(
                             x: .fit(to: .chart),
                             y: .disabled
@@ -94,7 +93,6 @@ struct TrainingChartView: View {
         .chartYAxisLabel("Loss")
         .chartXAxisLabel("Epoch")
         .chartForegroundStyleScale { colorPerLossType[$0]! }
-        .frame(height: 200)
     }
 
     @ViewBuilder
@@ -154,7 +152,6 @@ struct TrainingChartView: View {
                         position: .top,
                         alignment: .center,
                         spacing: 0,
-//                            overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))
                         overflowResolution: .init(
                             x: .fit(to: .chart),
                             y: .disabled
@@ -167,7 +164,6 @@ struct TrainingChartView: View {
         .chartXSelection(value: $selectedEpoch)
         .chartYAxisLabel("Accuracy")
         .chartXAxisLabel("Epoch")
-        .frame(height: 200)
     }
 
     @ViewBuilder

@@ -8,10 +8,12 @@
 import Foundation
 import MLX
 import MLXNN
+import SwiftUI
 
 // based on https://github.com/ml-explore/mlx-swift-examples/blob/main/Libraries/MNIST/MNIST.swift
 
 class LeNet: Module, TrainableModel {
+
     @ModuleInfo var conv1: Conv2d
     @ModuleInfo var conv2: Conv2d
     @ModuleInfo var pool1: MaxPool2d
@@ -42,6 +44,34 @@ class LeNet: Module, TrainableModel {
         x = fc3(x)
         x = sm(x)
         return x
+    }
+
+    func callAsFunction(_ x: MLXArray, saveActivations: (([String : MLXArray]) -> Void)? = nil) -> MLXArray {
+        if let saveActivations {
+            var x = x
+            var activations: [String : MLXArray] = [:]
+            x = tanh(conv1(x))
+            activations["conv1"] = x
+            x = pool1(x)
+            activations["pool1"] = x
+            x = tanh(conv2(x))
+            activations["conv2"] = x
+            x = pool2(x)
+            activations["pool2"] = x
+            x = flattened(x, start: 1)
+            x = tanh(fc1(x))
+            activations["fc1"] = x
+            x = tanh(fc2(x))
+            activations["fc2"] = x
+            x = fc3(x)
+            activations["fc3"] = x
+            x = sm(x)
+            activations["sm"] = x
+            saveActivations(activations)
+            return x
+        } else {
+            return callAsFunction(x)
+        }
     }
 
     func loss(model: Module, x: MLXArray, y: MLXArray) -> MLXArray {
